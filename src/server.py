@@ -4,9 +4,12 @@ import numpy as np
 from flask import Flask
 from flask_restful import abort, Api, Resource
 from functools import wraps
+import time
 
 app = Flask(__name__)
 api = Api(app)
+datasetpart = {}
+datasetparthourly = {}
 
 
 def cors(func, allow_origin=None, allow_headers=None, max_age=None):
@@ -107,9 +110,6 @@ class DataResource(Resource):
         lat = round(float(lat_lon[0]) * 5) / 5
         lon = round(float(lat_lon[1]) * 5) / 5
         lat_lon = str(lat) + '_' + str(lon)
-        jsonDataPath = '../data/json/datasetpart.json'
-        with open(jsonDataPath, 'r') as f:
-            dataset = json.load(f)
         '''
         calculate corr
         [ lat_lon: [ttd:[], clh:[], cll:[], clm:[], cla:[], tpw:[],
@@ -117,8 +117,8 @@ class DataResource(Resource):
         http://d4pdf.diasjp.net/d4PDF.cgi?target=RCM-subset&lang=ja
         '''
         try:
-            data = dataset[lat_lon]
-            return calculateCorrcoef(dataset, data)
+            data = datasetpart[lat_lon]
+            return calculateCorrcoef(datasetpart, data)
         except:
             abort(404, message="data in {} doesn't exist".format(lat_lon))
 
@@ -129,10 +129,8 @@ class HourlyResource(Resource):
         latlons = parameters.split('|')
         target_latlon = latlons[0]
         compared_lonlat = latlons[1]
-        jsonHourlyDataPath = '../data/json/datasetpartHourly.json'
-        with open(jsonHourlyDataPath, 'r') as f:
-            dataset = json.load(f)
-        data = [dataset[target_latlon]['tmp'], dataset[compared_lonlat]['tmp']]
+        data = [datasetparthourly[target_latlon]['tmp'],
+                datasetparthourly[compared_lonlat]['tmp']]
         return data
 
 
@@ -140,5 +138,10 @@ api.add_resource(DataResource, '/data/<parameters>')
 api.add_resource(HourlyResource, '/hourly/<parameters>')
 
 if __name__ == '__main__':
+    jsonDataPath = '../data/json/datasetpart.json'
+    jsonHourlyDataPath = '../data/json/datasetpartHourly.json'
+    with open(jsonDataPath, 'r') as f1, open(jsonHourlyDataPath, 'r') as f2:
+        datasetpart = json.load(f1)
+        datasetparthourly = json.load(f2)
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=True, host='0.0.0.0', port=port)
