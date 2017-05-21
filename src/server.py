@@ -4,7 +4,6 @@ import numpy as np
 from flask import Flask
 from flask_restful import abort, Api, Resource
 from functools import wraps
-import time
 
 app = Flask(__name__)
 api = Api(app)
